@@ -732,3 +732,259 @@ body {
 .modal-body strong {
     color: #374151;
 }
+
+/* Enhanced Suggestion Cards with New Features */
+.suggestion-type.feasibility {
+    background: #f59e0b;
+}
+
+.suggestion-type.guidance_pattern {
+    background: #8b5cf6;
+}
+
+.suggestion-meta {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+    display: flex;
+    gap: 12px;
+}
+
+.amendment-risk {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.amendment-risk.high {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.amendment-risk.medium {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.amendment-risk.low {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.readability-score {
+    font-family: 'Monaco', 'Menlo', monospace;
+    background: #f3f4f6;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.fda-reference, .ema-reference {
+    font-size: 10px;
+    color: #3b82f6;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* User Feedback Collection System */
+.feedback-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.feedback-content {
+    max-width: 600px;
+    width: 95%;
+}
+
+.feedback-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.feedback-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-options label:hover {
+    background: #f9fafb;
+    border-color: #3b82f6;
+}
+
+.feedback-options input[type="radio"] {
+    margin: 0;
+}
+
+.feedback-options input[type="radio"]:checked + span {
+    font-weight: 600;
+}
+
+#feedback-comments {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    margin-top: 8px;
+}
+
+#feedback-comments:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.feedback-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.feedback-submit {
+    background: #3b82f6;
+    color: white;
+    border: 1px solid #3b82f6;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-submit:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.feedback-skip {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-skip:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #374151;
+}
+
+.thank-you-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 1002;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+/* Enhanced Suggestion Cards Layout */
+.inline-suggestion-card {
+    padding: 20px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.inline-suggestion-card:hover {
+    background: #f9fafb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-content {
+    margin-bottom: 16px;
+}
+
+.suggestion-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+}
+
+.detail-value {
+    color: #6b7280;
+}
+
+/* Responsive Design for Complex Suggestions */
+@media (max-width: 480px) {
+    .suggestion-details {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .feedback-actions {
+        flex-direction: column;
+    }
+    
+    .feedback-submit,
+    .feedback-skip {
+        width: 100%;
+        text-align: center;
+    }
+}
