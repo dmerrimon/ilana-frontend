@@ -9,7 +9,7 @@
   <DefaultLocale>en-US</DefaultLocale>
   
   <DisplayName DefaultValue="Ilana" />
-  <Description DefaultValue="AI-powered clinical protocol assistant with Grammarly-style interface for real-time compliance checking, regulatory analysis, and protocol optimization." />
+  <Description DefaultValue="AI-powered clinical protocol assistant for real-time compliance checking and analysis." />
 
   <!-- Use simple placeholder icons for now -->
   <IconUrl DefaultValue="https://calm-tree-05ffcbc0f.3.azurestaticapps.net/assets/icon-32.png" />
@@ -33,7 +33,7 @@
   </Requirements>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://calm-tree-05ffcbc0f.3.azurestaticapps.net/index.html" />
+    <SourceLocation DefaultValue="https://calm-tree-05ffcbc0f.3.azurestaticapps.net/taskpane.html" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -98,7 +98,7 @@
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="AI-powered clinical protocol analysis and compliance checking."/>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open Ilana protocol analysis panel for real-time compliance checking and AI-powered suggestions."/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Analyze protocol for compliance and regulatory issues."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
