@@ -424,3 +424,311 @@ body {
 .error-close:hover {
     opacity: 0.8;
 }
+
+/* Real-Time Inline Suggestions */
+.inline-suggestions-section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.suggestions-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9fafb;
+}
+
+.suggestions-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.toggle-suggestions {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.toggle-suggestions:hover {
+    background: #e5e7eb;
+}
+
+.inline-suggestions-container {
+    max-height: 400px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.no-suggestions {
+    padding: 20px;
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.inline-suggestion-card {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.inline-suggestion-card:hover {
+    background: #f9fafb;
+}
+
+.inline-suggestion-card:last-child {
+    border-bottom: none;
+}
+
+.suggestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.suggestion-type {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+}
+
+.suggestion-type.compliance {
+    background: #15c39a;
+}
+
+.suggestion-type.clarity {
+    background: #3b82f6;
+}
+
+.suggestion-type.regulatory {
+    background: #8b5cf6;
+}
+
+.suggestion-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 2px;
+    transition: color 0.2s ease;
+}
+
+.suggestion-close:hover {
+    color: #ef4444;
+}
+
+.suggestion-content {
+    margin-bottom: 12px;
+}
+
+.suggestion-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+}
+
+.suggestion-text .original {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-decoration: line-through;
+}
+
+.suggestion-text .arrow {
+    color: #6b7280;
+    font-weight: bold;
+}
+
+.suggestion-text .suggested {
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.suggestion-rationale {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.compliance-rationale {
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.suggestion-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.suggestion-actions button {
+    padding: 6px 12px;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-accept {
+    background: #16a34a;
+    color: white;
+    border-color: #16a34a;
+}
+
+.suggestion-accept:hover {
+    background: #15803d;
+    border-color: #15803d;
+}
+
+.suggestion-ignore {
+    background: #6b7280;
+    color: white;
+    border-color: #6b7280;
+}
+
+.suggestion-ignore:hover {
+    background: #4b5563;
+    border-color: #4b5563;
+}
+
+.suggestion-learn {
+    background: white;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.suggestion-learn:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Real-time Mode Button */
+.realtime-button {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: 1px solid #2563eb;
+    margin-left: 8px;
+}
+
+.realtime-button:hover {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.realtime-button.active {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-color: #16a34a;
+}
+
+.realtime-button.active:hover {
+    background: linear-gradient(135deg, #15803d, #166534);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Navigation Layout Updates */
+.navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Suggestion Modal */
+.suggestion-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modal-body p {
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.modal-body strong {
+    color: #374151;
+}

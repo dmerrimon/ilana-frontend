@@ -1,6 +1,8 @@
 // Global variables
 let isAnalyzing = false;
 let currentIssues = [];
+let inlineSuggestions = [];
+let isRealTimeMode = false;
 
 // Office.js initialization
 Office.onReady((info) => {
@@ -369,11 +371,385 @@ function hideError() {
     }
 }
 
+// Real-time inline suggestions functionality
+async function enableRealTimeMode() {
+    isRealTimeMode = true;
+    console.log("Enabling real-time mode...");
+    
+    try {
+        await Word.run(async (context) => {
+            // Set up content control tracking for real-time analysis
+            const body = context.document.body;
+            context.load(body, 'paragraphs');
+            await context.sync();
+            
+            // Add event listeners for content changes
+            context.document.onParagraphAdded.add(handleContentChange);
+            context.document.onParagraphChanged.add(handleContentChange);
+            
+            console.log("Real-time mode enabled successfully");
+        });
+    } catch (error) {
+        console.error("Error enabling real-time mode:", error);
+    }
+}
+
+async function handleContentChange(event) {
+    if (!isRealTimeMode || isAnalyzing) return;
+    
+    console.log("Content changed, analyzing...");
+    
+    // Debounce rapid changes
+    clearTimeout(window.contentChangeTimer);
+    window.contentChangeTimer = setTimeout(() => {
+        performInlineAnalysis();
+    }, 1000);
+}
+
+async function performInlineAnalysis() {
+    try {
+        await Word.run(async (context) => {
+            const body = context.document.body;
+            context.load(body, 'text, paragraphs');
+            await context.sync();
+            
+            const fullText = body.text;
+            const paragraphs = body.paragraphs;
+            
+            // Analyze each paragraph for inline suggestions
+            for (let i = 0; i < paragraphs.items.length; i++) {
+                const paragraph = paragraphs.items[i];
+                context.load(paragraph, 'text');
+                await context.sync();
+                
+                if (paragraph.text.trim().length > 20) {
+                    const suggestions = await analyzeTextForSuggestions(paragraph.text);
+                    if (suggestions.length > 0) {
+                        await addInlineSuggestions(paragraph, suggestions);
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error in inline analysis:", error);
+    }
+}
+
+async function analyzeTextForSuggestions(text) {
+    const backendUrl = 'https://ilanalabs-add-in.onrender.com';
+    
+    try {
+        const response = await fetch(`${backendUrl}/analyze-inline`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                text: text,
+                mode: 'inline',
+                options: {
+                    clarity_check: true,
+                    compliance_check: true,
+                    regulatory_check: true
+                }
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            return result.suggestions || [];
+        }
+    } catch (error) {
+        console.error("Inline analysis API error:", error);
+    }
+    
+    // Fallback local analysis
+    return generateLocalInlineSuggestions(text);
+}
+
+function generateLocalInlineSuggestions(text) {
+    const suggestions = [];
+    
+    // Check for common compliance issues
+    if (text.toLowerCase().includes('patients') && !text.toLowerCase().includes('participants')) {
+        suggestions.push({
+            type: 'compliance',
+            originalText: 'patients',
+            suggestedText: 'participants',
+            rationale: 'Modern protocols prefer "participants" over "patients"',
+            complianceRationale: 'ICH E6(R2) encourages participant-centered language',
+            range: findTextRange(text, 'patients')
+        });
+    }
+    
+    // Check for clarity issues
+    if (text.split(' ').length > 25) {
+        suggestions.push({
+            type: 'clarity',
+            originalText: text,
+            suggestedText: text.substring(0, text.indexOf('.') + 1),
+            rationale: 'Sentence is too long and may be unclear',
+            complianceRationale: 'FDA guidance recommends clear, concise protocol language',
+            range: { start: 0, end: text.length }
+        });
+    }
+    
+    // Check for undefined terms
+    const medicalTerms = ['AE', 'SAE', 'ICF', 'CRF'];
+    medicalTerms.forEach(term => {
+        if (text.includes(term) && !text.includes(`${term} (`)) {
+            suggestions.push({
+                type: 'clarity',
+                originalText: term,
+                suggestedText: `${term} (define abbreviation)`,
+                rationale: 'Medical abbreviations should be defined on first use',
+                complianceRationale: 'Good Clinical Practice requires clear terminology',
+                range: findTextRange(text, term)
+            });
+        }
+    });
+    
+    return suggestions;
+}
+
+function findTextRange(text, searchText) {
+    const start = text.toLowerCase().indexOf(searchText.toLowerCase());
+    return start >= 0 ? { start, end: start + searchText.length } : { start: 0, end: 0 };
+}
+
+async function addInlineSuggestions(paragraph, suggestions) {
+    try {
+        await Word.run(async (context) => {
+            for (const suggestion of suggestions) {
+                // Create content control for the suggestion
+                const range = paragraph.getRange().getSubstring(
+                    suggestion.range.start, 
+                    suggestion.range.end - suggestion.range.start
+                );
+                
+                const contentControl = range.insertContentControl();
+                contentControl.title = `Ilana Suggestion: ${suggestion.type}`;
+                contentControl.tag = JSON.stringify(suggestion);
+                contentControl.appearance = "Tags";
+                contentControl.color = "#FF8C00"; // Orange color
+                
+                await context.sync();
+                
+                // Store suggestion for UI panel
+                inlineSuggestions.push({
+                    id: contentControl.id,
+                    ...suggestion
+                });
+            }
+            
+            updateInlineSuggestionsPanel();
+        });
+    } catch (error) {
+        console.error("Error adding inline suggestions:", error);
+    }
+}
+
+function updateInlineSuggestionsPanel() {
+    const suggestionsContainer = document.getElementById('inline-suggestions-container');
+    if (!suggestionsContainer) return;
+    
+    if (inlineSuggestions.length === 0) {
+        suggestionsContainer.innerHTML = '<p class="no-suggestions">No suggestions available</p>';
+        return;
+    }
+    
+    const suggestionsHTML = inlineSuggestions.map(suggestion => `
+        <div class="inline-suggestion-card" data-id="${suggestion.id}">
+            <div class="suggestion-header">
+                <span class="suggestion-type ${suggestion.type}">${suggestion.type.toUpperCase()}</span>
+                <button class="suggestion-close" onclick="dismissSuggestion('${suggestion.id}')">×</button>
+            </div>
+            <div class="suggestion-content">
+                <div class="suggestion-text">
+                    <span class="original">"${suggestion.originalText}"</span>
+                    <span class="arrow">→</span>
+                    <span class="suggested">"${suggestion.suggestedText}"</span>
+                </div>
+                <div class="suggestion-rationale">${suggestion.rationale}</div>
+                <div class="compliance-rationale">${suggestion.complianceRationale}</div>
+            </div>
+            <div class="suggestion-actions">
+                <button class="suggestion-accept" onclick="acceptSuggestion('${suggestion.id}')">Accept</button>
+                <button class="suggestion-ignore" onclick="ignoreSuggestion('${suggestion.id}')">Ignore</button>
+                <button class="suggestion-learn" onclick="learnMore('${suggestion.id}')">Learn More</button>
+            </div>
+        </div>
+    `).join('');
+    
+    suggestionsContainer.innerHTML = suggestionsHTML;
+}
+
+async function acceptSuggestion(suggestionId) {
+    try {
+        await Word.run(async (context) => {
+            const contentControls = context.document.contentControls;
+            context.load(contentControls);
+            await context.sync();
+            
+            for (let i = 0; i < contentControls.items.length; i++) {
+                const control = contentControls.items[i];
+                context.load(control, 'id, tag');
+                await context.sync();
+                
+                if (control.id.toString() === suggestionId) {
+                    const suggestion = JSON.parse(control.tag);
+                    control.insertText(suggestion.suggestedText, Word.InsertLocation.replace);
+                    control.delete(false);
+                    await context.sync();
+                    break;
+                }
+            }
+            
+            // Remove from suggestions array
+            inlineSuggestions = inlineSuggestions.filter(s => s.id !== suggestionId);
+            updateInlineSuggestionsPanel();
+        });
+    } catch (error) {
+        console.error("Error accepting suggestion:", error);
+    }
+}
+
+async function ignoreSuggestion(suggestionId) {
+    try {
+        await Word.run(async (context) => {
+            const contentControls = context.document.contentControls;
+            context.load(contentControls);
+            await context.sync();
+            
+            for (let i = 0; i < contentControls.items.length; i++) {
+                const control = contentControls.items[i];
+                context.load(control, 'id');
+                await context.sync();
+                
+                if (control.id.toString() === suggestionId) {
+                    control.delete(true); // Keep text, remove control
+                    await context.sync();
+                    break;
+                }
+            }
+            
+            // Remove from suggestions array
+            inlineSuggestions = inlineSuggestions.filter(s => s.id !== suggestionId);
+            updateInlineSuggestionsPanel();
+        });
+    } catch (error) {
+        console.error("Error ignoring suggestion:", error);
+    }
+}
+
+function dismissSuggestion(suggestionId) {
+    ignoreSuggestion(suggestionId);
+}
+
+function learnMore(suggestionId) {
+    const suggestion = inlineSuggestions.find(s => s.id === suggestionId);
+    if (suggestion) {
+        showSuggestionDetails(suggestion);
+    }
+}
+
+function showSuggestionDetails(suggestion) {
+    const modal = document.createElement('div');
+    modal.className = 'suggestion-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${suggestion.type.charAt(0).toUpperCase() + suggestion.type.slice(1)} Suggestion</h3>
+                <button class="modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Original:</strong> "${suggestion.originalText}"</p>
+                <p><strong>Suggested:</strong> "${suggestion.suggestedText}"</p>
+                <p><strong>Rationale:</strong> ${suggestion.rationale}</p>
+                <p><strong>Compliance Rationale:</strong> ${suggestion.complianceRationale}</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// Toggle real-time mode
+function toggleRealTimeMode() {
+    if (isRealTimeMode) {
+        disableRealTimeMode();
+    } else {
+        enableRealTimeMode();
+    }
+    updateRealTimeModeUI();
+}
+
+function updateRealTimeModeUI() {
+    const button = document.getElementById('realtime-button');
+    const text = document.getElementById('realtime-text');
+    const suggestionsSection = document.getElementById('inline-suggestions-section');
+    
+    if (isRealTimeMode) {
+        button.classList.add('active');
+        text.textContent = 'Disable Live Mode';
+        suggestionsSection.style.display = 'block';
+    } else {
+        button.classList.remove('active');
+        text.textContent = 'Enable Live Mode';
+        suggestionsSection.style.display = 'none';
+    }
+}
+
+function toggleSuggestionsPanel() {
+    const container = document.getElementById('inline-suggestions-container');
+    const toggle = document.querySelector('.toggle-suggestions');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        toggle.textContent = '📌';
+    } else {
+        container.style.display = 'none';
+        toggle.textContent = '📍';
+    }
+}
+
+function disableRealTimeMode() {
+    isRealTimeMode = false;
+    inlineSuggestions = [];
+    console.log("Real-time mode disabled");
+    
+    // Clear all content controls
+    Word.run(async (context) => {
+        const contentControls = context.document.contentControls;
+        context.load(contentControls);
+        await context.sync();
+        
+        for (let i = 0; i < contentControls.items.length; i++) {
+            const control = contentControls.items[i];
+            context.load(control, 'title');
+            await context.sync();
+            
+            if (control.title && control.title.startsWith('Ilana Suggestion')) {
+                control.delete(true);
+            }
+        }
+        
+        await context.sync();
+    }).catch(error => {
+        console.error("Error clearing suggestions:", error);
+    });
+    
+    updateInlineSuggestionsPanel();
+}
+
 // Export for testing
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         analyzeDocument,
         transformBackendResponse,
-        generateEnhancedFallbackAnalysis
+        generateEnhancedFallbackAnalysis,
+        enableRealTimeMode,
+        toggleRealTimeMode
     };
 }
