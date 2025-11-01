@@ -12,6 +12,9 @@ Office.onReady((info) => {
         console.log("Ilana add-in loaded successfully");
         setupEventListeners();
         initializeUI();
+        
+        // Try to sync any stored feedback
+        syncStoredFeedback();
     }
 });
 
@@ -440,8 +443,11 @@ async function performInlineAnalysis() {
 async function analyzeTextForSuggestions(text) {
     const backendUrl = 'https://ilanalabs-add-in.onrender.com';
     
+    // HYBRID APPROACH: Try backend first, fallback to local analysis
+    
+    // 1. TRY ENHANCED BACKEND ANALYSIS (if new endpoint exists)
     try {
-        const response = await fetch(`${backendUrl}/analyze-comprehensive`, {
+        const enhancedResponse = await fetch(`${backendUrl}/analyze-comprehensive`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -464,16 +470,125 @@ async function analyzeTextForSuggestions(text) {
             })
         });
         
-        if (response.ok) {
-            const result = await response.json();
-            return result.suggestions || [];
+        if (enhancedResponse.ok) {
+            const result = await enhancedResponse.json();
+            console.log("✅ Using enhanced backend analysis with 53,848 vectors");
+            updateAnalysisStatus("🚀", "Enhanced AI (53K vectors)");
+            return transformBackendSuggestions(result.suggestions || []);
         }
     } catch (error) {
-        console.error("Comprehensive analysis API error:", error);
+        console.log("Enhanced backend not available, trying standard backend...");
     }
     
-    // Enhanced fallback with all features
+    // 2. TRY STANDARD BACKEND ANALYSIS (existing endpoint)
+    try {
+        const standardResponse = await fetch(`${backendUrl}/analyze-protocol`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                text: text,
+                options: {
+                    analyze_compliance: true,
+                    analyze_clarity: true,
+                    analyze_engagement: true,
+                    analyze_delivery: true,
+                    analyze_safety: true,
+                    analyze_regulatory: true,
+                    comprehensive_mode: true,
+                    sentence_level: true
+                }
+            })
+        });
+        
+        if (standardResponse.ok) {
+            const result = await standardResponse.json();
+            console.log("✅ Using standard backend analysis with vector search");
+            updateAnalysisStatus("🔍", "Vector AI (53K vectors)");
+            return convertStandardToSuggestions(result, text);
+        }
+    } catch (error) {
+        console.log("Standard backend unavailable, using local analysis...");
+    }
+    
+    // 3. FALLBACK TO LOCAL ANALYSIS (always works)
+    console.log("✅ Using local analysis engine with 84+ built-in patterns");
+    updateAnalysisStatus("⚡", "Local AI (84+ patterns)");
     return generateComprehensiveLocalAnalysis(text);
+}
+
+function transformBackendSuggestions(suggestions) {
+    // Transform enhanced backend suggestions to our format
+    return suggestions.map(suggestion => ({
+        ...suggestion,
+        range: suggestion.range || { start: 0, end: suggestion.originalText?.length || 0 }
+    }));
+}
+
+function convertStandardToSuggestions(backendResult, text) {
+    // Convert standard backend analysis to inline suggestions
+    const suggestions = [];
+    
+    if (backendResult.issues && Array.isArray(backendResult.issues)) {
+        backendResult.issues.forEach((issue, index) => {
+            // Find text location for the issue
+            const range = findIssueLocation(issue.message, text);
+            
+            suggestions.push({
+                type: issue.type || 'compliance',
+                subtype: 'backend_analysis',
+                originalText: range.foundText || issue.message.substring(0, 50),
+                suggestedText: issue.suggestion || 'Review this section',
+                rationale: issue.message,
+                complianceRationale: issue.suggestion || 'Based on 53,848 vector analysis',
+                amendmentRisk: determineAmendmentRisk(issue.type),
+                range: range,
+                backendConfidence: backendResult.metadata?.ai_confidence || 'medium'
+            });
+        });
+    }
+    
+    // Combine with local analysis for comprehensive coverage
+    const localSuggestions = generateComprehensiveLocalAnalysis(text);
+    return [...suggestions, ...localSuggestions];
+}
+
+function findIssueLocation(issueText, fullText) {
+    // Simple text matching for backend issues
+    const lowerIssue = issueText.toLowerCase();
+    const lowerText = fullText.toLowerCase();
+    
+    // Look for key terms from the issue in the text
+    const keyWords = lowerIssue.split(' ').filter(word => 
+        word.length > 3 && !['the', 'and', 'for', 'with', 'this', 'that'].includes(word)
+    );
+    
+    for (const word of keyWords) {
+        const index = lowerText.indexOf(word);
+        if (index >= 0) {
+            return {
+                start: index,
+                end: index + word.length,
+                foundText: fullText.substring(index, index + word.length)
+            };
+        }
+    }
+    
+    return { start: 0, end: Math.min(50, fullText.length), foundText: fullText.substring(0, 50) };
+}
+
+function determineAmendmentRisk(issueType) {
+    const riskMapping = {
+        'compliance': 'high',
+        'safety': 'high',
+        'regulatory': 'high',
+        'clarity': 'medium',
+        'engagement': 'low',
+        'delivery': 'medium'
+    };
+    return riskMapping[issueType] || 'medium';
 }
 
 function generateComprehensiveLocalAnalysis(text) {
@@ -988,6 +1103,16 @@ function toggleSuggestionsPanel() {
     }
 }
 
+function updateAnalysisStatus(icon, text) {
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    
+    if (statusIndicator && statusText) {
+        statusIndicator.textContent = icon;
+        statusText.textContent = text;
+    }
+}
+
 function disableRealTimeMode() {
     isRealTimeMode = false;
     
@@ -1049,17 +1174,40 @@ function generateSessionId() {
 async function sendFeedbackToBackend(feedbackData) {
     const backendUrl = 'https://ilanalabs-add-in.onrender.com';
     
+    // HYBRID FEEDBACK: Try multiple endpoints
+    const endpoints = [
+        `${backendUrl}/feedback`,           // Enhanced endpoint
+        `${backendUrl}/user-feedback`,      // Alternative endpoint
+        `${backendUrl}/analytics`           // Fallback endpoint
+    ];
+    
+    for (const endpoint of endpoints) {
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(feedbackData)
+            });
+            
+            if (response.ok) {
+                console.log(`✅ Feedback sent successfully to ${endpoint}`);
+                return;
+            }
+        } catch (error) {
+            console.log(`Feedback endpoint ${endpoint} not available`);
+        }
+    }
+    
+    // Store locally if backend unavailable
     try {
-        await fetch(`${backendUrl}/feedback`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(feedbackData)
-        });
-        console.log('Feedback sent successfully');
+        const existingFeedback = JSON.parse(localStorage.getItem('ilana-feedback') || '[]');
+        existingFeedback.push(feedbackData);
+        localStorage.setItem('ilana-feedback', JSON.stringify(existingFeedback));
+        console.log('✅ Feedback stored locally for later sync');
     } catch (error) {
-        console.error('Error sending feedback:', error);
+        console.error('Error storing feedback locally:', error);
     }
 }
 
@@ -1161,6 +1309,52 @@ function showThankYouMessage() {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+async function syncStoredFeedback() {
+    try {
+        const storedFeedback = JSON.parse(localStorage.getItem('ilana-feedback') || '[]');
+        
+        if (storedFeedback.length === 0) {
+            return;
+        }
+        
+        console.log(`Attempting to sync ${storedFeedback.length} stored feedback items`);
+        
+        const backendUrl = 'https://ilanalabs-add-in.onrender.com';
+        
+        for (const feedback of storedFeedback) {
+            try {
+                const response = await fetch(`${backendUrl}/feedback`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ...feedback,
+                        syncedAt: new Date().toISOString(),
+                        wasStoredLocally: true
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Synced stored feedback item');
+                } else {
+                    throw new Error('Sync failed');
+                }
+            } catch (error) {
+                console.log('Backend still unavailable for feedback sync');
+                return; // Stop trying if backend is down
+            }
+        }
+        
+        // Clear stored feedback after successful sync
+        localStorage.removeItem('ilana-feedback');
+        console.log('✅ All stored feedback synced and cleared');
+        
+    } catch (error) {
+        console.error('Error syncing stored feedback:', error);
+    }
 }
 
 // Export for testing
