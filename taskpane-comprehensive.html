@@ -18,7 +18,6 @@
 
 <body>
     <div class="ilana-container">
-        
         <!-- Top Navigation Bar -->
         <div class="top-navigation">
             <div class="overall-score-container">
@@ -35,28 +34,19 @@
                 </button>
             </div>
             
-            <!-- Category Navigation with Issue Counts -->
+            <!-- Category Progress Bars -->
             <div class="category-navigation">
                 <button class="category-btn" data-filter="clarity">
-                    <div class="category-count" id="clarity-count">0</div>
                     <div class="category-progress">
                         <div class="progress-bar clarity-bar" id="clarity-progress"></div>
                     </div>
                     <span class="category-name">Clarity</span>
                 </button>
                 <button class="category-btn" data-filter="compliance">
-                    <div class="category-count" id="compliance-count">0</div>
                     <div class="category-progress">
                         <div class="progress-bar compliance-bar" id="compliance-progress"></div>
                     </div>
                     <span class="category-name">Compliance</span>
-                </button>
-                <button class="category-btn" data-filter="feasibility">
-                    <div class="category-count" id="feasibility-count">0</div>
-                    <div class="category-progress">
-                        <div class="progress-bar feasibility-bar" id="feasibility-progress"></div>
-                    </div>
-                    <span class="category-name">Feasibility</span>
                 </button>
             </div>
         </div>
@@ -100,6 +90,17 @@
 
         <!-- Bottom Controls -->
         <div class="bottom-controls">
+            <div class="quick-actions">
+                <button class="control-btn" onclick="jumpToNextIssue()" title="Next Issue">
+                    <span class="control-icon">⬇</span>
+                </button>
+                <button class="control-btn" onclick="acceptAllLow()" title="Accept All Low">
+                    <span class="control-icon">✓</span>
+                </button>
+                <button class="control-btn" onclick="exportReport()" title="Export Report">
+                    <span class="control-icon">📊</span>
+                </button>
+            </div>
         </div>
 
         <!-- Processing Indicator -->
@@ -135,6 +136,6 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="ilana-comprehensive.js?v=1.1.0"></script>
+    <script src="ilana-comprehensive.js"></script>
 </body>
 </html>
